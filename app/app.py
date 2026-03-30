@@ -1,15 +1,24 @@
-from openai import OpenAI
+from openai import OpenAI, RateLimitError, APITimeoutError
 import streamlit as st
+import backoff
+
+@backoff.on_exception(
+    backoff.expo,
+    (RateLimitError, APITimeoutError),
+    max_tries=5
+)
+def completions_with_backoff(**kwargs):
+    return client.chat.completions.create(**kwargs)
 
 client = OpenAI(
     api_key="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",
-    base_url="https://api.groq.com/openai/v1",
+    base_url="https://api.groq.com/openai/v1", timeout=60 
 )
 
-response = client.responses.create(
-    input="Explain the importance of fast language models",
-    model="openai/gpt-oss-20b",
-)
+#response = client.responses.create(
+  #  input="Explain the importance of fast language models",
+   # model="openai/gpt-oss-20b"
+#)
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
@@ -70,6 +79,7 @@ if prompt:
 
     reply = response.choices[0].message.content
     
+    
     # ---- Parsing logic ----
 def parse_text_to_dict(text):
     """
@@ -100,3 +110,4 @@ if prompt:
     parsed_dict = parse_text_to_dict(prompt)
     st.markdown("# Dictionary:")
     st.write(parsed_dict)
+    
